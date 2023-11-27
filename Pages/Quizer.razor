@@ -1,0 +1,110 @@
+﻿@page "/quizer"
+@inherits LayoutComponentBase
+@using BlazorApp4.Models
+@if (!showResults)
+{
+    var currentQuestion = questions[currentQuestionIndex];
+    <div class="quiz-container">
+        <div class="quiz-question">
+    <h3>@currentQuestion.QuestionText</h3>
+        </div>
+        @if (currentQuestion.ImageUrl.Length > 0)
+        {
+            <img src="@currentQuestion.ImageUrl" alt="Quiz Image" />
+        }
+        
+
+    @foreach (var option in currentQuestion.Options)
+    {
+            <div class="quiz-answer">
+        <button @onclick="() => CheckAnswer(option)"
+                disabled="@(selectedAnswer != null)"
+                class="@(selectedAnswer == option ? "selected" : "")">
+            @option
+        </button>
+            </div>
+    }
+
+    
+    @if (selectedAnswer != null)
+    {
+            <p>@(selectedAnswer == currentQuestion.CorrectAnswer ? "Rätt!" : "Fel!")</p>
+    }
+    </div>
+}
+else
+{
+    <div class="quiz-container">
+    <h2>Quiz avslutat!</h2>
+    <p>Ditt poäng: @score av @questions.Count</p>
+    <button @onclick="RestartQuiz">Starta om Quiz</button>
+    </div>
+}
+
+@code {
+    private int currentQuestionIndex = 0;
+    private int score = 0;
+    private string selectedAnswer;
+    private bool showResults = false;
+    private List<QuizQuestion> questions = new List<QuizQuestion>
+    {
+        new QuizQuestion
+        {
+            QuestionText = "Vad är huvudstaden i Bali?",
+            ImageUrl = "",
+            Options = new List<string> { "Paris", "Lyon", "Marseille", "Balli" },
+            CorrectAnswer = "Balli"
+        },
+        new QuizQuestion
+        {
+            QuestionText = "Vad är inte huvudstaden i Bali?",
+            ImageUrl = "",
+            Options = new List<string> { "Paris", "Lyon", "Marseille", "Balli" },
+            CorrectAnswer = "Paris"
+        },
+        // Lägg till fler frågor här
+    };
+
+    private async void CheckAnswer(string option)
+    {
+        selectedAnswer = option;
+        if (option == questions[currentQuestionIndex].CorrectAnswer)
+        {
+            score++;
+        }
+        // Vänta lite innan nästa fråga visas
+        if (currentQuestionIndex < questions.Count - 1)
+        {
+            Task.Delay(1000).ContinueWith(t => GoToNextQuestion());
+        }
+        else
+        {
+            
+            await Task.Delay(2000);
+            showResults = true;
+            StateHasChanged();
+        }
+    }
+    // Metoder för att hantera quizlogik (nästa fråga, kontrollera svar, etc.)
+    private void GoToNextQuestion()
+    {
+        if (currentQuestionIndex < questions.Count-1)
+        {
+            currentQuestionIndex++;
+            selectedAnswer = null;
+            StateHasChanged();
+        }
+        else
+        {
+            // Alla frågor besvarade, visa resultat
+            showResults = true;
+        }
+    }
+    private void RestartQuiz()
+    {
+        currentQuestionIndex = 0;
+        score = 0;
+        selectedAnswer = null;
+        showResults = false;
+    }
+}
